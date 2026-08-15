@@ -1,0 +1,92 @@
+# Talking Flashcards
+
+Turn a scanned deck of picture flashcards (a PDF, one card per page) into two
+self-contained, offline HTML apps with spoken audio:
+
+1. **Slideshow** (`slideshow/`) — one card per slide; the card's English name is
+   read aloud on every slide turn.
+2. **"Which one is a fish?" quiz** (`quiz/`) — a colorful game for small
+   children (ages 2–5). Two cards appear side by side and a child's voice asks
+   *"Which one is a fish?"* and names both. Tap anywhere to reveal: the fish
+   gets a green ring and a ✅🐟 badge, the other card grays out with a ❌, and a
+   warm adult voice explains the answer in one sentence.
+
+Everything runs from `file://` with no server, no build step, and no runtime
+dependencies — just a folder of JPEGs, a folder of MP3s, and one `index.html`.
+
+Born from a deck of Japanese kids' sea-creature flashcards (海の生物): the deck
+was scanned with a phone into a single PDF, and these scripts did the rest.
+
+## How it works
+
+```
+scan.pdf ──pdftoppm──▶ img/page-NN.jpg      (200 dpi JPEGs, one per card)
+names[]  ──edge-tts──▶ audio/slide-NN.mp3   (one neural-TTS clip per card)
+                       index.html           (plain JS slideshow / quiz)
+```
+
+Text-to-speech uses Microsoft's free Edge neural voices — either through the
+[`edge-tts`](https://pypi.org/project/edge-tts/) CLI, or through a
+`transcript-to-podcast` project if you have one (set `T2P_PROJECT` to its
+checkout and it will be used via `uv run`). Voices used here:
+`en-US-AvaNeural` (narrator/answers) and `en-US-AnaNeural` (child voice for the
+quiz questions).
+
+## Requirements
+
+- `pdftoppm` (Debian/Ubuntu: `sudo apt install poppler-utils`)
+- Python with `edge-tts` (`pip install edge-tts`) — needs network access while
+  generating audio; the built apps then work fully offline
+- Any modern browser to play the result
+
+## Quick start
+
+```bash
+# 1. Slideshow — edit NAMES in scripts/build-slideshow.sh AND in
+#    slideshow/index.html to match your PDF's page order, then:
+scripts/build-slideshow.sh my-scan.pdf out/slideshow
+
+# 2. Quiz — edit QUESTIONS/ANSWERS in scripts/build-quiz.sh AND the PAIRS
+#    array in quiz/index.html (pairs pages + on-screen text), then:
+scripts/build-quiz.sh my-scan.pdf out/quiz
+
+# 3. Open out/slideshow/index.html or out/quiz/index.html in a browser.
+```
+
+Both apps start behind a big **Play** button — browsers block audio until the
+first user gesture, so the button doubles as the autoplay unlock.
+
+## Controls
+
+| Action | Slideshow | Quiz |
+|--------|-----------|------|
+| Advance | click, `→`, `Space`, `PageDown` | tap anywhere, `→`, `Space` |
+| Go back | `←`, `PageUp` | `←` |
+| Replay audio | `R` | `R` |
+
+The quiz alternates question → reveal for each pair and ends in a
+"🎉 You found all the fish!" screen; tapping it restarts the game.
+
+## Customizing
+
+- **Different deck**: replace the name/question/answer arrays in the two build
+  scripts and the matching arrays at the top of each `index.html`
+  (`NAMES` in the slideshow, `PAIRS` in the quiz — page filenames, which side
+  is correct, and the on-screen captions).
+- **Different voices**: `VOICE=en-GB-SoniaNeural scripts/build-slideshow.sh …`
+  (also `Q_VOICE`/`A_VOICE` for the quiz). List voices with
+  `edge-tts --list-voices`.
+- **Different question**: nothing about the quiz is fish-specific — change the
+  title in `quiz/index.html` and the texts, and it becomes "Which one flies?",
+  "Which one is a vegetable?", etc.
+
+## What's not in this repo
+
+The scanned card images and generated MP3s are build outputs (and the card
+artwork is not mine to redistribute), so `.gitignore` excludes PDFs, images,
+and audio. Bring your own deck.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Covers the code only, not any card artwork you
+feed it.

@@ -1,0 +1,8 @@
+# Build outputs — scanned card images and generated audio are not committed
+out/
+*.pdf
+img/
+audio/
+*.mp3
+*.jpg
+*.png

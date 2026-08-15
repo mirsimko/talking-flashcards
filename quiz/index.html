@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which One Is a Fish?</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, #7fd8ff 0%, #4db8f0 45%, #1e8fd6 100%);
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none; cursor: pointer; position: relative;
+  }
+  /* floating bubbles */
+  .bubble {
+    position: fixed; bottom: -60px; border-radius: 50%;
+    background: rgba(255,255,255,.25); border: 2px solid rgba(255,255,255,.4);
+    animation: rise linear infinite; pointer-events: none;
+  }
+  @keyframes rise { to { transform: translateY(-115vh); } }
+
+  #title {
+    margin-top: 14px; font-size: clamp(1.6rem, 4.5vh, 3rem); color: #fff;
+    text-shadow: 3px 3px 0 #1673ad; text-align: center; z-index: 2;
+  }
+  #title .q { display: inline-block; animation: bounce 1.2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  #cards {
+    flex: 1; min-height: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 3vw;
+    padding: 1.5vh 2vw; z-index: 2;
+  }
+  .card {
+    position: relative; height: 100%; max-width: 45vw;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card img {
+    max-width: 100%; max-height: 100%;
+    border-radius: 24px; border: 8px solid #fff;
+    box-shadow: 0 10px 24px rgba(10,60,100,.45);
+    transition: transform .4s, border-color .4s, filter .4s;
+  }
+  .card:first-child img { transform: rotate(-2.5deg); }
+  .card:last-child  img { transform: rotate(2.5deg); }
+
+  .badge {
+    position: absolute; top: -6px; right: 4px;
+    font-size: clamp(2.2rem, 7vh, 4.5rem);
+    opacity: 0; transform: scale(0); transition: all .35s cubic-bezier(.5,1.8,.6,1);
+    filter: drop-shadow(2px 3px 2px rgba(0,0,0,.3)); z-index: 3;
+  }
+  body.revealed .badge { opacity: 1; transform: scale(1); }
+  body.revealed .card.yes img { border-color: #37d067; transform: scale(1.04) rotate(0deg); }
+  body.revealed .card.no  img { border-color: #ff7d7d; filter: grayscale(.45) brightness(.92); transform: scale(.94) rotate(0deg); }
+  body.revealed .card.yes { animation: wiggle .7s ease-in-out; }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+
+  #speech {
+    margin: 0 3vw 1.5vh; padding: 1.4vh 3vw; min-height: 8.5vh;
+    background: #fffbe8; border-radius: 26px; border: 5px solid #ffb703;
+    font-size: clamp(1rem, 2.8vh, 1.7rem); color: #234; text-align: center;
+    box-shadow: 0 6px 16px rgba(10,60,100,.35);
+    display: flex; align-items: center; justify-content: center; z-index: 2;
+  }
+  #tap { color: #eaf7ff; font-size: clamp(.8rem, 2vh, 1.1rem); margin-bottom: 1vh; opacity: .85; z-index: 2;
+         animation: bounce 1.6s ease-in-out infinite; }
+
+  #overlay, #party {
+    position: fixed; inset: 0; z-index: 10;
+    background: linear-gradient(180deg, #7fd8ff, #1e8fd6);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh;
+    text-align: center;
+  }
+  #overlay h1, #party h1 { font-size: clamp(2rem, 7vh, 4.5rem); color: #fff; text-shadow: 4px 4px 0 #1673ad; }
+  .bigfish { font-size: clamp(4rem, 16vh, 9rem); animation: swim 2.4s ease-in-out infinite; }
+  @keyframes swim { 0%,100% { transform: translateX(-18px) rotate(-4deg); } 50% { transform: translateX(18px) rotate(4deg); } }
+  #overlay button {
+    font-size: clamp(1.4rem, 4vh, 2.4rem); padding: 2vh 7vw; border-radius: 999px;
+    border: none; background: #ffb703; color: #5a3d00; cursor: pointer;
+    box-shadow: 0 8px 0 #d99400; font-family: inherit;
+  }
+  #overlay button:active { transform: translateY(6px); box-shadow: 0 2px 0 #d99400; }
+  #party { display: none; }
+  #party .confetti { font-size: clamp(3rem, 12vh, 7rem); animation: bounce 1s ease-in-out infinite; }
+</style>
+</head>
+<body>
+  <div id="overlay">
+    <div class="bigfish">🐟</div>
+    <h1>Which One Is a Fish?</h1>
+    <button id="start">▶ Play!</button>
+  </div>
+  <div id="party">
+    <div class="confetti">🎉🐟🎉</div>
+    <h1>Hooray!<br>You found all the fish!</h1>
+    <div id="again" style="font-size:clamp(1.2rem,3.5vh,2rem);color:#eaf7ff;">Tap to play again 🔁</div>
+  </div>
+
+  <div id="title">🐠 Which one is a <span style="color:#ffe066">FISH</span><span class="q">❓</span></div>
+  <div id="cards">
+    <div class="card" id="cardL"><img id="imgL" alt=""><div class="badge" id="badgeL"></div></div>
+    <div class="card" id="cardR"><img id="imgR" alt=""><div class="badge" id="badgeR"></div></div>
+  </div>
+  <div id="speech"></div>
+  <div id="tap">👆 Tap anywhere!</div>
+
+<script>
+const PAIRS = [
+  { left: "page-03.jpg", right: "page-05.jpg", fish: "L",
+    q: "Which one is a fish? 🤔",
+    a: "The sea bream is a fish — it has fins and shiny scales! The octopus just has eight wiggly arms. 🐙" },
+  { left: "page-04.jpg", right: "page-02.jpg", fish: "R",
+    q: "Which one is a fish? 🤔",
+    a: "The anemone fish swims with little fins! The crab walks on the sea floor with ten legs. 🦀" },
+  { left: "page-01.jpg", right: "page-08.jpg", fish: "L",
+    q: "Which one is a fish? 🤔",
+    a: "The shark is a really big fish with strong fins! The jellyfish is soft and wobbly like jelly. 🪼" },
+  { left: "page-06.jpg", right: "page-07.jpg", fish: "R",
+    q: "Which one is a fish? 🤔",
+    a: "Surprise! The sea horse is a fish with tiny fins and gills! The starfish is a star-shaped animal that creeps along the bottom. ⭐" },
+];
+const N = PAIRS.length;
+let step = -1;           // -1 = not started; even = question i, odd = answer i; 2N = party
+let player = null;
+
+function play(src) {
+  if (player) { player.pause(); }
+  player = new Audio("audio/" + src);
+  player.play().catch(() => {});
+}
+function setPair(i) {
+  const p = PAIRS[i];
+  document.getElementById("imgL").src = "img/" + p.left;
+  document.getElementById("imgR").src = "img/" + p.right;
+  document.getElementById("badgeL").textContent = p.fish === "L" ? "✅🐟" : "❌";
+  document.getElementById("badgeR").textContent = p.fish === "R" ? "✅🐟" : "❌";
+  document.getElementById("cardL").className = "card " + (p.fish === "L" ? "yes" : "no");
+  document.getElementById("cardR").className = "card " + (p.fish === "R" ? "yes" : "no");
+}
+function render() {
+  const party = document.getElementById("party");
+  if (step >= 2 * N) {
+    party.style.display = "flex";
+    play("end.mp3");
+    return;
+  }
+  party.style.display = "none";
+  const i = Math.floor(step / 2), answer = step % 2 === 1;
+  setPair(i);
+  document.body.classList.toggle("revealed", answer);
+  document.getElementById("speech").textContent = answer ? PAIRS[i].a : PAIRS[i].q;
+  play((answer ? "a" : "q") + (i + 1) + ".mp3");
+}
+function advance(dir) {
+  step += dir;
+  if (step < 0) step = 0;
+  if (step > 2 * N) { step = 0; }   // party screen tapped → restart
+  render();
+}
+document.getElementById("start").addEventListener("click", e => {
+  e.stopPropagation();
+  document.getElementById("overlay").remove();
+  step = 0; render();
+});
+document.body.addEventListener("click", () => {
+  if (document.getElementById("overlay")) return;
+  advance(1);
+});
+document.addEventListener("keydown", e => {
+  const ov = document.getElementById("overlay");
+  if (ov) { if (e.key === "Enter" || e.key === " ") document.getElementById("start").click(); return; }
+  if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") advance(1);
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") advance(-1);
+  else if (e.key.toLowerCase() === "r") render();
+});
+// bubbles
+for (let i = 0; i < 14; i++) {
+  const b = document.createElement("div");
+  b.className = "bubble";
+  const s = 12 + (i * 7) % 38;
+  b.style.width = b.style.height = s + "px";
+  b.style.left = (i * 71) % 100 + "vw";
+  b.style.animationDuration = 7 + (i * 13) % 9 + "s";
+  b.style.animationDelay = -(i * 1.7) + "s";
+  document.body.appendChild(b);
+}
+// preload images
+PAIRS.forEach(p => [p.left, p.right].forEach(f => { const im = new Image(); im.src = "img/" + f; }));
+</script>
+</body>
+</html>

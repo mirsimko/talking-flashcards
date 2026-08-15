@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sea Creatures — Slideshow</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #10151c; color: #e8e8e8;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none;
+    padding: 8px 0 4px;
+  }
+  #slide {
+    flex: 1; min-height: 0; width: auto;
+    max-width: calc(100vw - 150px); max-height: calc(100vh - 60px);
+    object-fit: contain;
+    border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.6);
+    cursor: pointer;
+  }
+  #caption { margin-top: 8px; font-size: 1.4rem; letter-spacing: .03em; line-height: 1.2; }
+  #caption span { color: #8fa0b3; font-size: .9rem; margin-left: 12px; }
+  #hint { position: fixed; bottom: 4px; color: #5c6b7a; font-size: .8rem; }
+  .navbtn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,.06); border: none; color: #cfd8e3;
+    font-size: 2rem; width: 56px; height: 90px; border-radius: 12px; cursor: pointer;
+  }
+  .navbtn:hover { background: rgba(255,255,255,.15); }
+  #prev { left: 14px; } #next { right: 14px; }
+  #overlay {
+    position: fixed; inset: 0; background: #10151c;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    z-index: 10;
+  }
+  #overlay h1 { font-weight: 300; font-size: 2.2rem; }
+  #overlay button {
+    font-size: 1.3rem; padding: 14px 44px; border-radius: 999px; border: none;
+    background: #2e86de; color: #fff; cursor: pointer;
+  }
+  #overlay button:hover { background: #4a9af0; }
+</style>
+</head>
+<body>
+  <div id="overlay">
+    <h1>🐟 Sea Creatures</h1>
+    <p style="color:#8fa0b3">14 cards · English names read aloud on every slide</p>
+    <button id="start">Start slideshow</button>
+  </div>
+
+  <img id="slide" alt="" >
+  <div id="caption"></div>
+  <div id="hint">← → arrows, space, or click the image to advance · R to replay the name</div>
+  <button class="navbtn" id="prev">‹</button>
+  <button class="navbtn" id="next">›</button>
+
+<script>
+const NAMES = [
+  "Bonito shark", "Anemone fish", "Sea bream", "Zuwai crab", "Octopus",
+  "Starfish", "Sea horse", "Jellyfish", "Prawn", "Squid",
+  "Abalone", "Umeboshi sea anemone", "Cherry clam", "Turban shell"
+];
+const N = NAMES.length;
+const pad = i => String(i + 1).padStart(2, "0");
+const clips = NAMES.map((_, i) => new Audio(`audio/slide-${pad(i)}.mp3`));
+let cur = 0, player = null;
+
+function show(i) {
+  cur = (i + N) % N;
+  document.getElementById("slide").src = `img/page-${pad(cur)}.jpg`;
+  document.getElementById("caption").innerHTML =
+    `${NAMES[cur]}<span>${cur + 1} / ${N}</span>`;
+  speak();
+  const nxt = new Image(); nxt.src = `img/page-${pad((cur + 1) % N)}.jpg`;
+}
+function speak() {
+  if (player) { player.pause(); player.currentTime = 0; }
+  player = clips[cur];
+  player.currentTime = 0;
+  player.play().catch(() => {});
+}
+document.getElementById("start").addEventListener("click", () => {
+  document.getElementById("overlay").remove();
+  show(0);
+});
+document.getElementById("slide").addEventListener("click", () => show(cur + 1));
+document.getElementById("next").addEventListener("click", () => show(cur + 1));
+document.getElementById("prev").addEventListener("click", () => show(cur - 1));
+document.addEventListener("keydown", e => {
+  if (document.getElementById("overlay")) {
+    if (e.key === "Enter" || e.key === " ") document.getElementById("start").click();
+    return;
+  }
+  if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") show(cur + 1);
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") show(cur - 1);
+  else if (e.key.toLowerCase() === "r") speak();
+});
+</script>
+</body>
+</html>
