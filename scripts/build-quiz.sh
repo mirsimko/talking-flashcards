@@ -17,14 +17,14 @@ A_VOICE=${A_VOICE:-en-US-AvaNeural}   # adult voice
 QUESTIONS=(
   "Which one is a fish? The sea bream... or the octopus?"
   "Which one is a fish? The crab... or the anemone fish?"
-  "Which one is a fish? The shark... or the jellyfish?"
+  "Which one is a fish? The sweetfish... or the jellyfish?"
   "Which one is a fish? The starfish... or the sea horse?"
   "Which one is a fish? The shark... or the whale?"
 )
 ANSWERS=(
   "The sea bream is a fish — it has fins and shiny scales! The octopus is not a fish, it just has eight wiggly arms."
   "The anemone fish is a fish — it swims with little fins! The crab is not a fish, it walks on the sea floor with ten legs."
-  "The shark is a fish — a really big fish with strong fins! The jellyfish is not a fish at all, it is soft and wobbly like jelly."
+  "The sweetfish is a fish — it swims in clean rivers with its little fins! The jellyfish is not a fish at all, it is soft and wobbly like jelly."
   "Surprise! The sea horse is a fish — it has tiny fins and gills! The starfish is not a fish, it is a star-shaped animal that creeps along the bottom."
   "Tricky one! The shark is a fish, but the whale is not — the whale is a huge mammal that swims up to the top of the sea to breathe air, just like you!"
 )

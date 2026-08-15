@@ -19,7 +19,7 @@ NAMES=(
   "Bonito shark" "Anemone fish" "Sea bream" "Zuwai crab" "Octopus"
   "Starfish" "Sea horse" "Jellyfish" "Prawn" "Squid"
   "Abalone" "Umeboshi sea anemone" "Cherry clam" "Turban shell"
-  "Sperm whale"
+  "Sperm whale" "Sweetfish"
 )
 
 mkdir -p "$OUT/img" "$OUT/audio"
