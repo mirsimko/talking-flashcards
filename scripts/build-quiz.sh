@@ -10,7 +10,7 @@ set -euo pipefail
 
 PDF=${1:?usage: build-quiz.sh <scan.pdf> <output-dir>}
 OUT=${2:?usage: build-quiz.sh <scan.pdf> <output-dir>}
-HERE=$(dirname "$(readlink -f "$0")")
+HERE=$(cd "$(dirname "$0")" && pwd)
 Q_VOICE=${Q_VOICE:-en-US-AnaNeural}   # child voice
 A_VOICE=${A_VOICE:-en-US-AvaNeural}   # adult voice
 

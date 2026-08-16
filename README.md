@@ -34,10 +34,33 @@ quiz questions).
 
 ## Requirements
 
-- `pdftoppm` (Debian/Ubuntu: `sudo apt install poppler-utils`)
-- Python with `edge-tts` (`pip install edge-tts`) — needs network access while
-  generating audio; the built apps then work fully offline
-- Any modern browser to play the result
+Two command-line tools, plus any modern browser to play the result:
+
+- `pdftoppm` (part of Poppler) — renders the PDF pages to JPEGs
+- `edge-tts` — generates the speech (needs network access while building;
+  the built apps then work fully offline)
+
+### macOS
+
+```bash
+brew install poppler
+brew install pipx && pipx install edge-tts   # or: pip3 install edge-tts
+```
+
+The build scripts use plain Bash and work with the stock macOS shell.
+
+### Linux
+
+```bash
+# Debian/Ubuntu
+sudo apt install poppler-utils pipx && pipx install edge-tts
+
+# Fedora
+sudo dnf install poppler-utils pipx && pipx install edge-tts
+```
+
+On either platform, check the install with `pdftoppm -v` and
+`edge-tts --list-voices | head`.
 
 ## Quick start
 

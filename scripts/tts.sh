@@ -14,7 +14,7 @@ OUT=${2:?usage: tts.sh "text" out.mp3 [voice]}
 VOICE=${3:-en-US-AvaNeural}
 
 if [[ -n "${T2P_PROJECT:-}" ]]; then
-  tmp=$(mktemp --suffix=.md)
+  tmp=$(mktemp "${TMPDIR:-/tmp}/tts.XXXXXX.md")
   printf '**Narrator:** %s\n' "$TEXT" > "$tmp"
   uv run --project "$T2P_PROJECT" transcript-to-podcast "$tmp" \
     -o "$OUT" --voice "Narrator=$VOICE" >/dev/null

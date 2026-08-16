@@ -10,7 +10,7 @@ set -euo pipefail
 
 PDF=${1:?usage: build-slideshow.sh <scan.pdf> <output-dir>}
 OUT=${2:?usage: build-slideshow.sh <scan.pdf> <output-dir>}
-HERE=$(dirname "$(readlink -f "$0")")
+HERE=$(cd "$(dirname "$0")" && pwd)
 VOICE=${VOICE:-en-US-AvaNeural}
 
 # Cards from extra single-page PDFs can be appended: render them separately
