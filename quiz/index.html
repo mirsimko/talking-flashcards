@@ -11,7 +11,7 @@
     font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI", sans-serif;
     background: linear-gradient(180deg, #7fd8ff 0%, #4db8f0 45%, #1e8fd6 100%);
     display: flex; flex-direction: column; align-items: center;
-    user-select: none; cursor: pointer; position: relative;
+    user-select: none; position: relative;
   }
   /* floating bubbles */
   .bubble {
@@ -36,6 +36,7 @@
   .card {
     position: relative; height: 100%; max-width: 45vw;
     display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
   }
   .card img {
     max-width: 100%; max-height: 100%;
@@ -45,6 +46,7 @@
   }
   .card:first-child img { transform: rotate(-2.5deg); }
   .card:last-child  img { transform: rotate(2.5deg); }
+  body:not(.revealed) .card img:hover { transform: scale(1.03) rotate(0deg); border-color: #ffe066; }
 
   .badge {
     position: absolute; top: -6px; right: 4px;
@@ -68,11 +70,33 @@
   #tap { color: #eaf7ff; font-size: clamp(.8rem, 2vh, 1.1rem); margin-bottom: 1vh; opacity: .85; z-index: 2;
          animation: bounce 1.6s ease-in-out infinite; }
 
+  /* result popup */
+  #popup {
+    position: fixed; inset: 0; z-index: 6; display: none;
+    align-items: flex-end; justify-content: center;
+    background: rgba(9, 40, 66, .35); padding-bottom: 5vh;
+  }
+  body.revealed #popup { display: flex; }
+  #popup-box {
+    background: #fffbe8; border: 6px solid #ffb703; border-radius: 30px;
+    padding: 2.5vh 4vw; max-width: min(80vw, 900px); text-align: center;
+    box-shadow: 0 14px 34px rgba(5,30,55,.5);
+    animation: pop .45s cubic-bezier(.5,1.8,.6,1);
+  }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #verdict { font-size: clamp(1.5rem, 5vh, 2.6rem); margin-bottom: 1vh; }
+  #verdict.good { color: #1e9e4a; }
+  #verdict.bad  { color: #e2574c; }
+  #verdict.neutral { color: #1673ad; }
+  #explain { font-size: clamp(1rem, 3vh, 1.6rem); color: #234; line-height: 1.35; }
+  #popnext { margin-top: 1.5vh; color: #b07800; font-size: clamp(.9rem, 2.3vh, 1.2rem);
+             animation: bounce 1.6s ease-in-out infinite; }
+
   #overlay, #party {
     position: fixed; inset: 0; z-index: 10;
     background: linear-gradient(180deg, #7fd8ff, #1e8fd6);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh;
-    text-align: center;
+    text-align: center; cursor: pointer;
   }
   #overlay h1, #party h1 { font-size: clamp(2rem, 7vh, 4.5rem); color: #fff; text-shadow: 4px 4px 0 #1673ad; }
   .bigfish { font-size: clamp(4rem, 16vh, 9rem); animation: swim 2.4s ease-in-out infinite; }
@@ -95,8 +119,9 @@
   </div>
   <div id="party">
     <div class="confetti">🎉🐟🎉</div>
-    <h1>Hooray!<br>You found all the fish!</h1>
-    <div id="again" style="font-size:clamp(1.2rem,3.5vh,2rem);color:#eaf7ff;">Tap to play again 🔁</div>
+    <h1 id="party-title"></h1>
+    <div id="score" style="font-size:clamp(1.4rem,4.5vh,2.6rem);color:#fffbe8;background:rgba(22,115,173,.55);padding:1.2vh 5vw;border-radius:999px;"></div>
+    <div style="font-size:clamp(1.2rem,3.5vh,2rem);color:#eaf7ff;">Tap to play again 🔁</div>
   </div>
 
   <div id="title">🐠 Which one is a <span style="color:#ffe066">FISH</span><span class="q">❓</span></div>
@@ -105,7 +130,15 @@
     <div class="card" id="cardR"><img id="imgR" alt=""><div class="badge" id="badgeR"></div></div>
   </div>
   <div id="speech"></div>
-  <div id="tap">👆 Tap anywhere!</div>
+  <div id="tap"></div>
+
+  <div id="popup">
+    <div id="popup-box">
+      <div id="verdict"></div>
+      <div id="explain"></div>
+      <div id="popnext">👆 Tap to keep going!</div>
+    </div>
+  </div>
 
 <script>
 const PAIRS = [
@@ -127,11 +160,14 @@ const PAIRS = [
 ];
 const N = PAIRS.length;
 let step = -1;           // -1 = not started; even = question i, odd = answer i; 2N = party
+let lastGuess = null;    // "correct" | "wrong" | null (revealed via keyboard)
+let results = Array(N).fill(null);   // per-pair "correct"/"wrong", null if skipped
 let player = null;
 
-function play(src) {
-  if (player) { player.pause(); }
+function play(src, next) {
+  if (player) { player.onended = null; player.pause(); }
   player = new Audio("audio/" + src);
+  if (next) player.onended = () => play(next);
   player.play().catch(() => {});
 }
 function setPair(i) {
@@ -146,21 +182,55 @@ function setPair(i) {
 function render() {
   const party = document.getElementById("party");
   if (step >= 2 * N) {
+    const right = results.filter(r => r === "correct").length;
+    const wrong = results.filter(r => r === "wrong").length;
+    document.getElementById("party-title").innerHTML =
+      right === N ? "Hooray!<br>You found all the fish!" : "Good job, little explorer!";
+    document.getElementById("score").textContent = `✅ ${right} right · ❌ ${wrong} wrong`;
     party.style.display = "flex";
-    play("end.mp3");
+    play(right === N ? "end.mp3" : "score-" + right + ".mp3");
     return;
   }
   party.style.display = "none";
   const i = Math.floor(step / 2), answer = step % 2 === 1;
   setPair(i);
   document.body.classList.toggle("revealed", answer);
-  document.getElementById("speech").textContent = answer ? PAIRS[i].a : PAIRS[i].q;
-  play((answer ? "a" : "q") + (i + 1) + ".mp3");
+  document.getElementById("speech").textContent = PAIRS[i].q;
+  document.getElementById("tap").textContent =
+    answer ? "👆 Tap anywhere to keep going!" : "👆 Tap the card you think is the fish!";
+  if (answer) {
+    const v = document.getElementById("verdict");
+    document.getElementById("explain").textContent = PAIRS[i].a;
+    if (lastGuess === "correct") {
+      v.textContent = "🎉 YES! You found the fish! 🎉";
+      v.className = "good";
+      play("correct.mp3", "a" + (i + 1) + ".mp3");
+    } else if (lastGuess === "wrong") {
+      v.textContent = "💛 Oops, not that one — look!";
+      v.className = "bad";
+      play("wrong.mp3", "a" + (i + 1) + ".mp3");
+    } else {
+      v.textContent = "🐟 Here is the fish!";
+      v.className = "neutral";
+      play("a" + (i + 1) + ".mp3");
+    }
+  } else {
+    play("q" + (i + 1) + ".mp3");
+  }
+}
+function guess(side) {
+  if (step < 0 || step % 2 !== 0 || step >= 2 * N) return;
+  const i = Math.floor(step / 2);
+  lastGuess = side === PAIRS[i].fish ? "correct" : "wrong";
+  results[i] = lastGuess;
+  step++;
+  render();
 }
 function advance(dir) {
+  lastGuess = null;
   step += dir;
   if (step < 0) step = 0;
-  if (step > 2 * N) { step = 0; }   // party screen tapped → restart
+  if (step > 2 * N) { step = 0; results = Array(N).fill(null); }   // party tapped → restart
   render();
 }
 document.getElementById("start").addEventListener("click", e => {
@@ -168,9 +238,16 @@ document.getElementById("start").addEventListener("click", e => {
   document.getElementById("overlay").remove();
   step = 0; render();
 });
+["L", "R"].forEach(side => {
+  document.getElementById("card" + side).addEventListener("click", e => {
+    if (document.getElementById("overlay")) return;
+    if (step % 2 === 0) { e.stopPropagation(); guess(side); }
+    // in revealed state the click bubbles to body and advances
+  });
+});
 document.body.addEventListener("click", () => {
   if (document.getElementById("overlay")) return;
-  advance(1);
+  if (step % 2 === 1 || step >= 2 * N) advance(1);   // question state: only card taps count
 });
 document.addEventListener("keydown", e => {
   const ov = document.getElementById("overlay");

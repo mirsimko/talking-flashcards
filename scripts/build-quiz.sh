@@ -29,6 +29,16 @@ ANSWERS=(
   "Tricky one! The shark is a fish, but the whale is not — the whale is a huge mammal that swims up to the top of the sea to breathe air, just like you!"
 )
 FINALE="Hooray! You found all the fish! Great job, little explorer!"
+CORRECT="Yay! That's right! You found the fish!"
+WRONG="Oops! Not that one!"
+# score-K.mp3 is played on the end screen for K correct answers (K = all → FINALE)
+SCORES=(
+  "The fish were hiding today! Let's play again and find them!"
+  "You found one of the five fish! Let's play again and find them all!"
+  "You found two of the five fish! Great job — let's find the rest!"
+  "You found three of the five fish! Great job, little explorer!"
+  "You found four of the five fish! Wow, so close to all of them!"
+)
 
 mkdir -p "$OUT/img" "$OUT/audio"
 pdftoppm -jpeg -r 200 -jpegopt quality=85 "$PDF" "$OUT/img/page"
@@ -40,6 +50,11 @@ for i in "${!QUESTIONS[@]}"; do
   echo "pair $n done"
 done
 "$HERE/tts.sh" "$FINALE" "$OUT/audio/end.mp3" "$Q_VOICE"
+"$HERE/tts.sh" "$CORRECT" "$OUT/audio/correct.mp3" "$Q_VOICE"
+"$HERE/tts.sh" "$WRONG" "$OUT/audio/wrong.mp3" "$Q_VOICE"
+for k in "${!SCORES[@]}"; do
+  "$HERE/tts.sh" "${SCORES[$k]}" "$OUT/audio/score-$k.mp3" "$Q_VOICE"
+done
 
 cp "$HERE/../quiz/index.html" "$OUT/"
 echo "Done: open $OUT/index.html in a browser."
