@@ -6,10 +6,16 @@
 <title>Sea Creatures — Slideshow</title>
 <style>
   :root { color-scheme: dark; }
+  @font-face {
+    font-family: "Baloo 2";
+    src: url("fonts/baloo2-latin.woff2") format("woff2");
+    font-weight: 400 800;
+    font-display: swap;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #10151c; color: #e8e8e8;
-    font-family: "Segoe UI", system-ui, sans-serif;
+    font-family: "Baloo 2", "Segoe UI", system-ui, sans-serif;
     height: 100vh; overflow: hidden;
     display: flex; flex-direction: column; align-items: center;
     user-select: none;

@@ -13,6 +13,9 @@ self-contained, offline HTML apps with spoken audio:
 
 Everything runs from `file://` with no server, no build step, and no runtime
 dependencies — just a folder of JPEGs, a folder of MP3s, and one `index.html`.
+Both apps bundle the [Baloo 2](https://fonts.google.com/specimen/Baloo+2)
+typeface (SIL OFL, `fonts/`) as a self-hosted woff2, so they look the same on
+desktop, Android, and iOS.
 
 Born from a deck of Japanese kids' sea-creature flashcards (海の生物): the deck
 was scanned with a phone into a single PDF, and these scripts did the rest.
