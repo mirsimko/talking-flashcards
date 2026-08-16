@@ -42,9 +42,24 @@ Two command-line tools, plus any modern browser to play the result:
 
 ### macOS
 
+Starting from a clean Mac (no Python or pip needed beforehand):
+
 ```bash
-brew install poppler
-brew install pipx && pipx install edge-tts   # or: pip3 install edge-tts
+# 1. Install Homebrew if you don't have it yet (from https://brew.sh)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Poppler (for pdftoppm) and Python (which brings pip with it)
+brew install poppler python
+
+# 3. The TTS engine
+pip3 install edge-tts
+```
+
+If `pip3 install` complains about an "externally managed environment", use
+pipx instead — it puts CLI tools in isolated environments and on your PATH:
+
+```bash
+brew install pipx && pipx install edge-tts && pipx ensurepath
 ```
 
 The build scripts use plain Bash and work with the stock macOS shell.
