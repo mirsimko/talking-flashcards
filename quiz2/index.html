@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fish Facts Quiz</title>
+<style>
+  @font-face {
+    font-family: "Baloo 2";
+    src: url("fonts/baloo2-latin.woff2") format("woff2");
+    font-weight: 400 800;
+    font-display: swap;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Baloo 2", "Comic Sans MS", "Chalkboard SE", "Segoe UI", sans-serif;
+    font-weight: 600;
+    background: linear-gradient(180deg, #7fd8ff 0%, #4db8f0 45%, #1e8fd6 100%);
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none; position: relative;
+  }
+  .bubble {
+    position: fixed; bottom: -60px; border-radius: 50%;
+    background: rgba(255,255,255,.25); border: 2px solid rgba(255,255,255,.4);
+    animation: rise linear infinite; pointer-events: none;
+  }
+  @keyframes rise { to { transform: translateY(-115vh); } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  #title {
+    margin-top: 12px; font-size: clamp(1.3rem, 4vh, 2.6rem); color: #fff;
+    text-shadow: 3px 3px 0 #1673ad; text-align: center; z-index: 2;
+  }
+  #title .n { background: #ffe066; color: #5a3d00; text-shadow: none; border-radius: 999px;
+              padding: 0 .6em; font-size: .8em; vertical-align: middle; }
+
+  #speech {
+    margin: 1.2vh 3vw 0; padding: 1.2vh 3vw; min-height: 7.5vh; max-width: 96vw;
+    background: #fffbe8; border-radius: 26px; border: 5px solid #ffb703;
+    font-size: clamp(1.1rem, 3.4vh, 2rem); color: #234; text-align: center;
+    box-shadow: 0 6px 16px rgba(10,60,100,.35);
+    display: flex; align-items: center; justify-content: center; z-index: 2;
+  }
+
+  #cards {
+    flex: 1; min-height: 0; width: 100%;
+    display: flex; align-items: stretch; justify-content: center; gap: 2.5vw;
+    padding: 2vh 2vw 1vh; z-index: 2;
+  }
+  .card {
+    position: relative; flex: 1 1 0; max-width: 30vw; min-width: 0;
+    display: flex; flex-direction: column; align-items: center;
+    background: #fff; border-radius: 26px; border: 7px solid #fff;
+    box-shadow: 0 10px 24px rgba(10,60,100,.45);
+    cursor: pointer; overflow: hidden;
+    transition: transform .35s, border-color .35s, filter .35s;
+  }
+  .card:nth-child(1) { transform: rotate(-2deg); }
+  .card:nth-child(3) { transform: rotate(2deg); }
+  body:not(.revealed) .card:hover { transform: scale(1.04) rotate(0deg); border-color: #ffe066; }
+  .letter {
+    position: absolute; top: 8px; left: 8px; z-index: 3;
+    width: clamp(2rem, 6vh, 3.4rem); height: clamp(2rem, 6vh, 3.4rem); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1.1rem, 3.6vh, 2rem); color: #fff; text-shadow: 1px 1px 0 rgba(0,0,0,.25);
+    box-shadow: 0 3px 0 rgba(0,0,0,.2);
+  }
+  .card:nth-child(1) .letter { background: #ff6b6b; }
+  .card:nth-child(2) .letter { background: #ffb703; }
+  .card:nth-child(3) .letter { background: #38b000; }
+  .pic { position: relative; flex: 1; min-height: 0; width: 100%;
+         display: flex; align-items: center; justify-content: center; padding: 2vh 1.2vw 1vh; }
+  .pic img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .ring {
+    position: absolute; border-radius: 50%; border: 6px solid #ffb703;
+    box-shadow: 0 0 0 4px rgba(255,255,255,.9), 0 0 18px rgba(255,183,3,.9);
+    transform: translate(-50%, -50%); animation: pulse 1.2s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes pulse { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.12); } }
+  .label {
+    width: 100%; padding: .6vh 1vw 1.2vh; text-align: center;
+    font-size: clamp(.95rem, 3vh, 1.7rem); color: #234; line-height: 1.15;
+  }
+  .badge {
+    position: absolute; top: 2px; right: 6px; z-index: 3;
+    font-size: clamp(2rem, 7vh, 4.2rem);
+    opacity: 0; transform: scale(0); transition: all .35s cubic-bezier(.5,1.8,.6,1);
+    filter: drop-shadow(2px 3px 2px rgba(0,0,0,.3));
+  }
+  body.revealed .card.yes .badge, body.revealed .card.picked .badge { opacity: 1; transform: scale(1); }
+  body.revealed .card.yes { border-color: #37d067; transform: scale(1.05) rotate(0deg); animation: wiggle .7s ease-in-out; }
+  body.revealed .card.picked:not(.yes) { border-color: #ff7d7d; }
+  body.revealed .card:not(.yes) { filter: grayscale(.45) brightness(.92); transform: scale(.94) rotate(0deg); }
+  @keyframes wiggle { 0%,100% { transform: scale(1.05) rotate(0); } 25% { transform: scale(1.05) rotate(-2deg); } 75% { transform: scale(1.05) rotate(2deg); } }
+
+  #tap { color: #eaf7ff; font-size: clamp(.8rem, 2vh, 1.1rem); margin-bottom: 1vh; opacity: .85; z-index: 2;
+         animation: bounce 1.6s ease-in-out infinite; }
+
+  #popup {
+    position: fixed; inset: 0; z-index: 6; display: none;
+    align-items: flex-end; justify-content: center;
+    background: rgba(9, 40, 66, .35); padding-bottom: 5vh;
+  }
+  body.revealed #popup { display: flex; }
+  #popup-box {
+    background: #fffbe8; border: 6px solid #ffb703; border-radius: 30px;
+    padding: 2.5vh 4vw; max-width: min(84vw, 960px); text-align: center;
+    box-shadow: 0 14px 34px rgba(5,30,55,.5);
+    animation: pop .45s cubic-bezier(.5,1.8,.6,1);
+  }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #verdict { font-size: clamp(1.5rem, 5vh, 2.6rem); margin-bottom: 1vh; }
+  #verdict.good { color: #1e9e4a; }
+  #verdict.bad  { color: #e2574c; }
+  #verdict.neutral { color: #1673ad; }
+  #explain { font-size: clamp(1rem, 3vh, 1.6rem); color: #234; line-height: 1.35; }
+  #popnext { margin-top: 1.5vh; color: #b07800; font-size: clamp(.9rem, 2.3vh, 1.2rem);
+             animation: bounce 1.6s ease-in-out infinite; }
+
+  #overlay, #party {
+    position: fixed; inset: 0; z-index: 10;
+    background: linear-gradient(180deg, #7fd8ff, #1e8fd6);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh;
+    text-align: center; cursor: pointer;
+  }
+  #overlay h1, #party h1 { font-size: clamp(2rem, 7vh, 4.5rem); color: #fff; text-shadow: 4px 4px 0 #1673ad; }
+  .bigfish { font-size: clamp(4rem, 16vh, 9rem); animation: swim 2.4s ease-in-out infinite; }
+  @keyframes swim { 0%,100% { transform: translateX(-18px) rotate(-4deg); } 50% { transform: translateX(18px) rotate(4deg); } }
+  #overlay button {
+    font-size: clamp(1.4rem, 4vh, 2.4rem); padding: 2vh 7vw; border-radius: 999px;
+    border: none; background: #ffb703; color: #5a3d00; cursor: pointer;
+    box-shadow: 0 8px 0 #d99400; font-family: inherit;
+  }
+  #overlay button:active { transform: translateY(6px); box-shadow: 0 2px 0 #d99400; }
+  #party { display: none; }
+  #party .confetti { font-size: clamp(3rem, 12vh, 7rem); animation: bounce 1s ease-in-out infinite; }
+  #score { font-size: clamp(1.4rem, 4.5vh, 2.6rem); color: #fffbe8; background: rgba(22,115,173,.55);
+           padding: 1.2vh 5vw; border-radius: 999px; }
+</style>
+</head>
+<body>
+  <div id="overlay">
+    <div class="bigfish">🐟</div>
+    <h1>Fish Facts Quiz</h1>
+    <div style="font-size:clamp(1.1rem,3vh,1.8rem);color:#eaf7ff;">Four questions · three choices · tap your answer!</div>
+    <button id="start">▶ Play!</button>
+  </div>
+  <div id="party">
+    <div class="confetti">🎉🐟🎉</div>
+    <h1 id="party-title"></h1>
+    <div id="score"></div>
+    <div style="font-size:clamp(1.2rem,3.5vh,2rem);color:#eaf7ff;">Tap to play again 🔁</div>
+  </div>
+
+  <div id="title">🐠 Fish Facts Quiz <span class="n" id="qnum"></span></div>
+  <div id="speech"></div>
+  <div id="cards">
+    <div class="card" data-i="0"><div class="letter">A</div><div class="badge"></div><div class="pic"><img alt=""><div class="ring" hidden></div></div><div class="label"></div></div>
+    <div class="card" data-i="1"><div class="letter">B</div><div class="badge"></div><div class="pic"><img alt=""><div class="ring" hidden></div></div><div class="label"></div></div>
+    <div class="card" data-i="2"><div class="letter">C</div><div class="badge"></div><div class="pic"><img alt=""><div class="ring" hidden></div></div><div class="label"></div></div>
+  </div>
+  <div id="tap"></div>
+
+  <div id="popup">
+    <div id="popup-box">
+      <div id="verdict"></div>
+      <div id="explain"></div>
+      <div id="popnext">👆 Tap to keep going!</div>
+    </div>
+  </div>
+
+<script>
+// Each question: prompt text, three options (image + label; optional `ring`
+// = highlight circle at x%,y% of the picture with radius r% of its width),
+// index of the correct option, and the spoken/shown explanation.
+// Keep in sync with QUESTIONS/ANSWERS in scripts/build-quiz2.sh.
+const QUESTIONS = [
+  { q: "Where are a fish's gills? 🐟", answer: 0,
+    opts: [
+      { img: "fish.jpg", label: "Behind the head", ring: { x: 37, y: 52, r: 13 } },
+      { img: "fish.jpg", label: "On the belly",    ring: { x: 56, y: 73, r: 13 } },
+      { img: "fish.jpg", label: "On the tail",     ring: { x: 88, y: 47, r: 13 } },
+    ],
+    a: "The gills are just behind the head! A fish opens and closes its gill covers to breathe — look closely next time you see one! 👀" },
+  { q: "What does a fish use to breathe under the water? 💧", answer: 1,
+    opts: [
+      { img: "lungs.jpg", label: "Lungs" },
+      { img: "gills.jpg", label: "Gills" },
+      { img: "fin.jpg",   label: "Fins" },
+    ],
+    a: "Fish breathe with their gills — they pull the air right out of the water! Lungs are for animals that breathe air, like you, and fins are for swimming. 🫧" },
+  { q: "Which one is NOT a fish? 🤔", answer: 2,
+    opts: [
+      { img: "shark.jpg",   label: "Shark" },
+      { img: "tuna.jpg",    label: "Tuna" },
+      { img: "dolphin.jpg", label: "Dolphin" },
+    ],
+    a: "The dolphin is not a fish — it is a mammal! It swims up to the top to breathe air, and it feeds its babies milk. Sharks and tuna are fish. 🐬" },
+  { q: "Which one is the BIGGEST fish? 📏", answer: 0,
+    opts: [
+      { img: "whale-shark.jpg",  label: "Whale shark" },
+      { img: "whale.jpg",        label: "Whale" },
+      { img: "bluefin-tuna.jpg", label: "Bluefin tuna" },
+    ],
+    a: "The whale shark is the biggest fish in the whole world — as long as a bus! The whale is even bigger, but it is not a fish, it is a mammal. The bluefin tuna is big, but not that big! 🚌" },
+];
+const N = QUESTIONS.length;
+let step = -1;           // -1 = not started; even = question i, odd = answer i; 2N = party
+let lastGuess = null;    // index tapped, or null (revealed via keyboard)
+let results = Array(N).fill(null);   // per-question "correct"/"wrong", null if skipped
+let player = null;
+const cards = [...document.querySelectorAll(".card")];
+
+function play(src, next) {
+  if (player) { player.onended = null; player.pause(); }
+  player = new Audio("audio/" + src);
+  if (next) player.onended = () => play(next);
+  player.play().catch(() => {});
+}
+function setQuestion(i) {
+  const Q = QUESTIONS[i];
+  document.getElementById("qnum").textContent = (i + 1) + " / " + N;
+  document.getElementById("speech").textContent = Q.q;
+  cards.forEach((c, k) => {
+    const o = Q.opts[k];
+    c.querySelector("img").src = "img/" + o.img;
+    c.querySelector(".label").textContent = o.label;
+    c.querySelector(".ring").hidden = !o.ring;
+    const right = k === Q.answer;
+    c.querySelector(".badge").textContent = right ? "✅" : "❌";
+    c.className = "card " + (right ? "yes" : "no") + (lastGuess === k ? " picked" : "");
+  });
+}
+// place highlight rings over the rendered image box (object-fit: contain)
+function placeRings() {
+  const i = Math.floor(Math.max(step, 0) / 2);
+  if (i >= N) return;
+  cards.forEach((c, k) => {
+    const o = QUESTIONS[i].opts[k], ring = c.querySelector(".ring");
+    if (!o.ring) return;
+    const img = c.querySelector("img"), pic = c.querySelector(".pic");
+    const nw = img.naturalWidth || 1, nh = img.naturalHeight || 1;
+    const box = img.getBoundingClientRect(), pb = pic.getBoundingClientRect();
+    const s = Math.min(box.width / nw, box.height / nh);       // contain scale
+    const w = nw * s, h = nh * s;
+    const ox = box.left - pb.left + (box.width - w) / 2, oy = box.top - pb.top + (box.height - h) / 2;
+    const d = o.ring.r * 2 / 100 * w;
+    ring.style.left = ox + o.ring.x / 100 * w + "px";
+    ring.style.top  = oy + o.ring.y / 100 * h + "px";
+    ring.style.width = ring.style.height = d + "px";
+  });
+}
+window.addEventListener("resize", placeRings);
+cards.forEach(c => c.querySelector("img").addEventListener("load", placeRings));
+function render() {
+  const party = document.getElementById("party");
+  if (step >= 2 * N) {
+    const right = results.filter(r => r === "correct").length;
+    const wrong = results.filter(r => r === "wrong").length;
+    document.getElementById("party-title").innerHTML =
+      right === N ? "Hooray!<br>You got them all right!" : "Good job, little explorer!";
+    document.getElementById("score").textContent = `✅ ${right} right · ❌ ${wrong} wrong`;
+    party.style.display = "flex";
+    play(right === N ? "end.mp3" : "score-" + right + ".mp3");
+    return;
+  }
+  party.style.display = "none";
+  const i = Math.floor(step / 2), answer = step % 2 === 1;
+  setQuestion(i);
+  placeRings();
+  document.body.classList.toggle("revealed", answer);
+  document.getElementById("tap").textContent =
+    answer ? "👆 Tap anywhere to keep going!" : "👆 Tap the answer you think is right!";
+  if (answer) {
+    const v = document.getElementById("verdict");
+    document.getElementById("explain").textContent = QUESTIONS[i].a;
+    if (lastGuess === QUESTIONS[i].answer) {
+      v.textContent = "🎉 YES! That's right! 🎉";
+      v.className = "good";
+      play("correct.mp3", "a" + (i + 1) + ".mp3");
+    } else if (lastGuess !== null) {
+      v.textContent = "💛 Oops, not that one — look!";
+      v.className = "bad";
+      play("wrong.mp3", "a" + (i + 1) + ".mp3");
+    } else {
+      v.textContent = "💡 Here is the answer!";
+      v.className = "neutral";
+      play("a" + (i + 1) + ".mp3");
+    }
+  } else {
+    play("q" + (i + 1) + ".mp3");
+  }
+}
+function guess(k) {
+  if (step < 0 || step % 2 !== 0 || step >= 2 * N) return;
+  const i = Math.floor(step / 2);
+  lastGuess = k;
+  results[i] = k === QUESTIONS[i].answer ? "correct" : "wrong";
+  step++;
+  render();
+}
+function advance(dir) {
+  lastGuess = null;
+  step += dir;
+  if (step < 0) step = 0;
+  if (step > 2 * N) { step = 0; results = Array(N).fill(null); }   // party tapped → restart
+  render();
+}
+document.getElementById("start").addEventListener("click", e => {
+  e.stopPropagation();
+  document.getElementById("overlay").remove();
+  step = 0; render();
+});
+cards.forEach((c, k) => c.addEventListener("click", e => {
+  if (document.getElementById("overlay")) return;
+  if (step % 2 === 0) { e.stopPropagation(); guess(k); }
+  // in revealed state the click bubbles to body and advances
+}));
+document.body.addEventListener("click", () => {
+  if (document.getElementById("overlay")) return;
+  if (step % 2 === 1 || step >= 2 * N) advance(1);   // question state: only card taps count
+});
+document.addEventListener("keydown", e => {
+  const ov = document.getElementById("overlay");
+  if (ov) { if (e.key === "Enter" || e.key === " ") document.getElementById("start").click(); return; }
+  const k = e.key.toLowerCase();
+  if (["1", "a"].includes(k)) guess(0);
+  else if (["2", "b"].includes(k)) guess(1);
+  else if (["3", "c"].includes(k)) guess(2);
+  else if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") advance(1);
+  else if (e.key === "ArrowLeft" || e.key === "PageUp") advance(-1);
+  else if (k === "r") render();
+});
+for (let i = 0; i < 14; i++) {
+  const b = document.createElement("div");
+  b.className = "bubble";
+  const s = 12 + (i * 7) % 38;
+  b.style.width = b.style.height = s + "px";
+  b.style.left = (i * 71) % 100 + "vw";
+  b.style.animationDuration = 7 + (i * 13) % 9 + "s";
+  b.style.animationDelay = -(i * 1.7) + "s";
+  document.body.appendChild(b);
+}
+QUESTIONS.forEach(Q => Q.opts.forEach(o => { const im = new Image(); im.src = "img/" + o.img; }));
+</script>
+</body>
+</html>

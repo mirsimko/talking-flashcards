@@ -1,6 +1,6 @@
 # Talking Flashcards
 
-Turn a scanned deck of picture flashcards (a PDF, one card per page) into two
+Turn a scanned deck of picture flashcards (a PDF, one card per page) into three
 self-contained, offline HTML apps with spoken audio:
 
 1. **Slideshow** (`slideshow/`) — one card per slide; the card's English name is
@@ -10,6 +10,13 @@ self-contained, offline HTML apps with spoken audio:
    *"Which one is a fish?"* and names both. Tap anywhere to reveal: the fish
    gets a green ring and a ✅🐟 badge, the other card grays out with a ❌, and a
    warm adult voice explains the answer in one sentence.
+
+3. **"Fish Facts" 3-choice quiz** (`quiz2/`) — four spoken multiple-choice
+   questions (where are the gills? what does a fish breathe with? which is not
+   a fish? which is the biggest fish?) with three picture cards each. Tap a
+   card → cheerful pop-up with the explanation; right/wrong tally at the end.
+   Question 1 highlights body parts on the same fish picture with a pulsing
+   ring, so no extra artwork is needed for "behind the head / belly / tail".
 
 Everything runs from `file://` with no server, no build step, and no runtime
 dependencies — just a folder of JPEGs, a folder of MP3s, and one `index.html`.
@@ -91,7 +98,11 @@ scripts/build-slideshow.sh my-scan.pdf out/slideshow
 #    array in quiz/index.html (pairs pages + on-screen text), then:
 scripts/build-quiz.sh my-scan.pdf out/quiz
 
-# 3. Open out/slideshow/index.html or out/quiz/index.html in a browser.
+# 3. Fish Facts quiz — no PDF; generates the audio and copies the page, then
+#    drop your ten option pictures into out/quiz2/img (names in quiz2/index.html):
+scripts/build-quiz2.sh out/quiz2
+
+# 4. Open out/<app>/index.html in a browser.
 ```
 
 Both apps start behind a big **Play** button — browsers block audio until the
@@ -99,14 +110,15 @@ first user gesture, so the button doubles as the autoplay unlock.
 
 ## Controls
 
-| Action | Slideshow | Quiz |
-|--------|-----------|------|
-| Advance | click, `→`, `Space`, `PageDown` | tap anywhere, `→`, `Space` |
+| Action | Slideshow | Quizzes |
+|--------|-----------|---------|
+| Answer | — | tap a card (Fish Facts: also `A`/`B`/`C` or `1`/`2`/`3`) |
+| Advance | click, `→`, `Space`, `PageDown` | tap anywhere after the reveal, `→`, `Space` |
 | Go back | `←`, `PageUp` | `←` |
 | Replay audio | `R` | `R` |
 
-The quiz alternates question → reveal for each pair and ends in a
-"🎉 You found all the fish!" screen; tapping it restarts the game.
+The quizzes alternate question → reveal for each item and end in a "🎉" screen
+with the right/wrong count; tapping it restarts the game.
 
 ## Customizing
 
@@ -117,7 +129,13 @@ The quiz alternates question → reveal for each pair and ends in a
 - **Different voices**: `VOICE=en-GB-SoniaNeural scripts/build-slideshow.sh …`
   (also `Q_VOICE`/`A_VOICE` for the quiz). List voices with
   `edge-tts --list-voices`.
-- **Different question**: nothing about the quiz is fish-specific — change the
+- **Different questions** (Fish Facts): edit the `QUESTIONS` array in
+  `quiz2/index.html` (prompt, three options with image + label, index of the
+  right answer, explanation) and the matching `QUESTIONS`/`ANSWERS` in
+  `scripts/build-quiz2.sh`. Option pictures can be anything — the ones used
+  for the live demo were generated with ChatGPT from short "flat cartoon
+  sticker, white background" prompts, then cropped with ImageMagick.
+- **Different question** (Which one is a fish?): nothing about the quiz is fish-specific — change the
   title in `quiz/index.html` and the texts, and it becomes "Which one flies?",
   "Which one is a vegetable?", etc.
 
