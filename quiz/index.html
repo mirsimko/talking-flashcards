@@ -190,7 +190,7 @@ function render() {
   const party = document.getElementById("party");
   if (step >= 2 * N) {
     const right = results.filter(r => r === "correct").length;
-    const wrong = results.filter(r => r === "wrong").length;
+    const wrong = N - right;   // skipped/unanswered counts as wrong
     document.getElementById("party-title").innerHTML =
       right === N ? "Hooray!<br>You found all the fish!" : "Good job, little explorer!";
     document.getElementById("score").textContent = `✅ ${right} right · ❌ ${wrong} wrong`;
